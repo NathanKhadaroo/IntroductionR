@@ -1,0 +1,32 @@
+{
+    "id": "CDF3DC41",
+    "path": null,
+    "project_path": null,
+    "type": "r_dataframe",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1602594440835.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "expression": "gentoo_no_na_cntr",
+        "caption": "gentoo_no_na_cntr",
+        "totalObservations": 119,
+        "displayedObservations": 119,
+        "variables": 9,
+        "cacheKey": "32DB1DFC",
+        "object": "gentoo_no_na_cntr",
+        "environment": "",
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=gentoo_no_na_cntr&cache_key=32DB1DFC&max_cols=50",
+        "preview": 0
+    },
+    "folds": "",
+    "lastKnownWriteTime": 4573928688,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1602594440835,
+    "read_only": false,
+    "read_only_alternatives": []
+}

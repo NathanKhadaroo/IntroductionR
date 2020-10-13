@@ -1,0 +1,8 @@
+"0",""
+"0","ggplot(data = penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +"
+"0","  geom_point(aes(color = species,"
+"0","                 shape = species),"
+"0","             size = 2)  +"
+"0","  geom_smooth(aes(colour = species), method = lm, se = FALSE) +"
+"0","  geom_smooth(method = lm, se = FALSE, color = 'red') +"
+"0","  scale_color_manual(values = c(""darkorange"",""darkorchid"",""cyan4""))"

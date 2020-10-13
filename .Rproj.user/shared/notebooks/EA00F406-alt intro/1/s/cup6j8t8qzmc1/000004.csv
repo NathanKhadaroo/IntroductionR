@@ -1,0 +1,3 @@
+"0","linear_model <- lm(formula = bill_depth_mm ~ bill_length_mm, data = penguins)"
+"0",""
+"0","tidy(linear_model)"

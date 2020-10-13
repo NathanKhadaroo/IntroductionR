@@ -1,0 +1,14 @@
+"0",""
+"0","penguins <- read_csv('Data/penguins.csv')"
+"2","Parsed with column specification:
+cols(
+  species = [31mcol_character()[39m,
+  island = [31mcol_character()[39m,
+  bill_length_mm = [32mcol_double()[39m,
+  bill_depth_mm = [32mcol_double()[39m,
+  flipper_length_mm = [32mcol_double()[39m,
+  body_mass_g = [32mcol_double()[39m,
+  sex = [31mcol_character()[39m,
+  year = [32mcol_double()[39m
+)
+"

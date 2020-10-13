@@ -1,0 +1,6 @@
+"0","penguins %>%"
+"0","  filter(species == 'Gentoo') %>%"
+"0","  drop_na() %>%"
+"0","  mutate(body_mass_cntr = scale(body_mass_g)) %>%"
+"0","  ggplot(aes(x = flipper_length_mm, y = body_mass_cntr)) +"
+"0","  geom_point()"

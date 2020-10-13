@@ -1,0 +1,444 @@
+---
+title: 'Answering Social Research Questions with Statistical Models: Introduction
+  to R'
+author: "Nathan Khadaroo-Mccheyne"
+output:
+  html_document:
+    df_print: paged
+    theme: united
+    highlight: tango
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Getting started:
+
+## Installing and loading packages:
+
+Use the library function to load installed packages to your r session:
+
+```{r library, message=FALSE}
+
+library(tidyverse)
+library(broom)
+library(fastDummies)
+```
+
+You might get the following error message:
+
+*Error in library(tidyverse) : there is no package called ‘tidyverse’*
+
+This means that the package is not installed (or that you've misspelt it!)
+
+To install a package, use the install.package() function:
+
+```{r installpackage, eval=FALSE}
+
+install.packages("tidyverse")
+
+```
+
+The [tidyverse](https://www.tidyverse.org) is "an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures".
+
+You can find out more about the "tidy data" structure in this [short article](https://www.openscapes.org/blog/2020/10/12/tidy-data/). For a more in-depth explanation, you can read [Hadley Wickham's original paper](https://www.jstatsoft.org/article/view/v059i10)
+
+## (Not) setting the working directory: 
+
+You can set the working directory manually for your session using:
+
+```{r setwd, eval=FALSE}
+
+setwd("")
+
+```
+
+However, when working in RStudio it is a good idea to use an R project. 
+
+When you use an R Project, the working directory is automatically set to the file containing the .Rproj file. This makes working with your code much easier, especially if you want to share your code with others!
+
+You can find a more detailed overview of the benefits of using projects in Chapter 8 of [R for Data Science](https://r4ds.had.co.nz/workflow-projects.html#summary).
+
+To open an R project you click 'File' then 'Open Project' from within RStudio. Alternatively, you can double–click on the .Rproj file outside of R.
+
+
+
+## Loading data:
+
+The data we will be using for this worksheet we will be using [Allison Horst's Palmer Penguins data](https://allisonhorst.github.io/palmerpenguins/articles/intro.html)! 
+
+![](Images/lter_penguins.png)
+
+First, we need to load the data into our R session.
+
+There are a few ways to load a .csv file into your R session.
+
+
+- In base R you can use read.csv() :
+
+```{r read.csv}
+
+penguins <- read.csv('Data/penguins.csv')
+
+```
+
+- If you have the tidyverse package loaded, you can instead use read_csv() :
+
+```{r read_csv}
+
+penguins <- read_csv('Data/penguins.csv')
+
+```
+This has a few benefits over read.csv: It is considerably faster, handles strings in a more useful way, and outputs a "column specification" which summaries how it has interpreted all the variables in the dataset. 
+
+R is object-oriented, this means that most of the operations in R revolve around the creation and modification of objects.
+
+In the above code, we used read_csv() to create an object called penguins from a csv file. The resulting object is called a tibble. Tibbles are  an 'opinionated' type of data frame which work well with most functions in R.
+
+To check that the data has been successfully loaded, you can simply run the name of the object.
+
+```{r check}
+
+penguins
+
+```
+# Pipes:
+
+One of the most useful features from the tidyverse is the pipe: %>%. 
+
+The pipe takes the output from the code before it, and passes it on to the next section as the first argument. 
+
+An easy way to think of pipes is that they represent "and then". For example, in the following code I ask for r to choose the penguins data set, "and then" drop NA's, "and then"  center the body mass variable, "and then" filter out non-Gentoo penguins, "and then" plot a scatterplot of flipper length against body mass.
+
+```{r, warning = FALSE}
+penguins %>%
+  drop_na() %>%
+  filter(species == 'Gentoo') %>%
+  mutate(body_mass_cntr = scale(body_mass_g)) %>%
+  ggplot(aes(x = flipper_length_mm, y = body_mass_cntr)) +
+  geom_point()
+```
+
+The main benefit of pipes is that they allow us to avoid creating new objects for every step of our operation.
+
+A non-piped version of the above might look like:
+
+```{r}
+penguins_gentoo <- filter(penguins, species == 'Gentoo')
+
+penguins_gentoo_no_na <- drop_na(penguins_gentoo)
+
+penguins_gentoo_no_na_cntr <- mutate(penguins_gentoo_no_na, body_mass_cntr = scale(body_mass_g))
+
+ggplot(data = penguins_gentoo_no_na_cntr,
+       aes(x = flipper_length_mm, y = body_mass_cntr)) +
+  geom_point()
+
+```
+
+
+You can find out more about the uses of pipes in chapter 18 of [R for data science](https://r4ds.had.co.nz/pipes.html). 
+
+
+# Basic pre-processing:
+
+## Renaming variables:
+
+You can get the names of the variables using the colnames() function:
+
+```{r}
+colnames(penguins)
+```
+
+We often want to rename some of our variables. For example, the variables for bill length and depth refer more specifically to the dimensions of the penguins' culmen (the upper ridge of their bill). 
+
+![](Images/culmen_depth-2.png){width=80%}
+
+We can rename the variables to reflect this using the [rename()](https://dplyr.tidyverse.org/reference/rename.html) function. The syntax is rename(data, new_name = old_name). 
+
+```{r}
+penguins %>%
+  rename(culmen_length_mm = bill_length_mm,
+         culmen_depth_mm = bill_depth_mm)
+```
+
+## Subsetting variables:
+
+We can subset variables using the [select()](https://dplyr.tidyverse.org/reference/select.html) function:
+
+```{r}
+penguins %>%
+  select(island, sex, species)
+```
+
+
+
+## Re-coding categorical variables:
+
+Sometimes we might want to collapse categorical variables into a smaller amount of categories. For example, we might be interested in using a classification model to explore how Adelie penguins differ from the other species of penguin (Chinstrap and Gentoo). 
+
+First, let's look at how many unique values the species variable can take using the [unique()](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/unique) function.
+
+
+```{r}
+penguins %>%
+  select(species) %>%
+  unique()
+```
+
+We can re-code the penguins' species as "Adelie" and "Other" using the mutate and recode functions.
+
+[Mutate](https://dplyr.tidyverse.org/reference/mutate.html) allows you to create, modify, and delete columns. Mutate has a sister function called transmute, the only difference is that transmute only keeps the variables specified in the function.
+
+[Recode](https://dplyr.tidyverse.org/reference/recode.html) allows you to re-assign the values of variables.
+
+
+```{r}
+penguins %>%
+  mutate(species = recode(species,
+                          Chinstrap = "Other",
+                          Gentoo = "Other"
+                          )
+         )
+```
+To check whether this has worked we can look at the unique values of species.
+
+```{r}
+penguins %>%
+  transmute(species = recode(species,
+                          Chinstrap = "Other",
+                          Gentoo = "Other"
+                          )
+            ) %>%
+  unique()
+```
+As expected, there are now only two unique values, Adelie and Other.
+
+## Re-coding continuous variables into categorical variables:
+
+Often we will want to collapse continuous variables into categories. This is useful analytically but can also be useful for non-analytic purposes, for example collapsing continuous variables for age into age groups can make it more difficult to identify individuals in a data-set, making it safer to share that data.
+
+The [cut family](https://ggplot2.tidyverse.org/reference/cut_interval.html) of functions is very useful here.
+
+There are four main functions we can use.
+
+- cut_interval() makes n groups with equal range.
+
+- cut_number() makes n groups with (approximately) equal numbers of observations.
+
+- cut_width() makes groups of width 'width'.
+
+- cut() which allows you to manually specify boundaries and the resulting values.
+
+For example, using cut_interval() we could re-code the flipper length variable into three groups of constant range.
+
+```{r}
+penguins %>%
+  mutate(flipper_length_category = cut_interval(flipper_length_mm,
+                                                3,
+                                                labels = c("smol",
+                                                           "medium",
+                                                           "large")
+                                                )
+         )
+```
+
+Another option would be to collapse the flipper length variable into 4 groups with equal numbers of observations using the cut_number() function.
+
+```{r}
+penguins %>%
+  mutate(flipper_length_quartile = cut_number(flipper_length_mm,
+                                              4,
+                                              labels = c("first",
+                                                         "second",
+                                                         "third",
+                                                         "fourth")
+                                                )
+         )
+```
+A note of caution, these only approximate true quartiles. 
+
+cut_interval(), cut_number(), and cut_width() are very useful for creating discrete categories of constant width, size, or range. However, sometimes we will want to create discrete categories where none of these values are constant.
+
+To do so we use the cut() function to manually specify the limits of our groups.
+
+As an example, the following code assigns penguins under 4 kilos to the light category, between 4 and 5 kilos to the medium category, and over five kilos to the heavy category.
+
+```{r}
+
+penguins %>%
+  mutate(weight_category = cut(body_mass_g,
+                     breaks=c(-Inf, 4000, 5000, Inf),
+                     labels=c("light","medium","heavy")
+                     )
+         )
+```
+
+## Creating quadratic terms:
+
+Often you may want to create quadratic terms, for example when you suspect the effect of a variable is non-linear. You can easily do this using the mutate() function.
+
+For example, we might what a squared term for body mass:
+
+```{r}
+penguins %>%
+  mutate(body_mass_sqrd = body_mass_g^2)
+```
+## Creating interaction terms:
+
+Sometimes we might want to model an interaction between variables. This is useful when we suspect the effect of one variable depends on the value of another variable.
+
+For example, we might want to model an interaction between body mass and flipper length.
+As previously, this can be easily done using the mutate() function.
+
+```{r}
+penguins %>%
+  mutate(mass_times_flipper = body_mass_g*flipper_length_mm)
+```
+## Centering continuous variables:
+
+Centering variables can often facilitate the interpretation of a regression result.
+
+We can use the mutate() and [scale()](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/scale) functions to center variables.
+
+Using body mass as an example:
+
+```{r}
+penguins %>%
+  drop_na %>%
+  mutate(body_mass_cntr = scale(body_mass_g))
+```
+We can also do transformations"by hand" using mutate(), however we must make sure to exclude missing values. We can easily do so by using the [drop_na()](https://tidyr.tidyverse.org/reference/drop_na.html) function before calling mutate():
+
+```{r}
+penguins %>%
+  drop_na() %>%
+  mutate(body_mass_cntr = ((body_mass_g - mean(body_mass_g)) / sd(body_mass_g)))
+```
+
+## Creating dummy variables:
+
+The [fastDummies package](https://cran.r-project.org/web/packages/fastDummies/vignettes/making-dummy-variables.html) provides a bunch of useful functions for creating dummy variables.
+
+Using the island variable as an example:
+
+```{r}
+penguins %>%
+  dummy_cols("island",
+             remove_first_dummy = TRUE)
+```
+The number of dummy variables must always be the number of categories minus one. By specifying remove_first_dummy = TRUE, we tell R to drop one of the dummy variables which becomes the reference category, in this instance the island of Biscoe.
+
+## Creating subsets of cases based on variable values:
+
+Sometimes we only want a subset of cases from the data-set. We can use the [filter()](https://dplyr.tidyverse.org/reference/filter.html) function to subset data.
+
+For example, we might only be interested in Gentoo penguins:
+
+```{r}
+penguins %>%
+  filter(species == 'Gentoo')
+```
+We can also filter on numerical variables. For example, we might only be interested in penguins who weigh over 5 kilos:
+
+```{r}
+penguins %>%
+  filter(body_mass_g > 5000)
+```
+
+# Modelling:
+
+## Linear regression:
+
+You can fit a linear model in R using the [lm()](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm) function. It has the following formula:
+
+lm(formula = dependant_variable ~ independant_variable_1 + independant_variable_2 ... + independant_variable_n, data = name_of_the_data).
+
+For example, we can look at the relationship between bill (culmen!) depth and length. 
+
+```{r}
+linear_model <- lm(formula = bill_depth_mm ~ bill_length_mm, data = penguins)
+
+tidy(linear_model)
+```
+
+It looks like there is a very slight negative association between bill length and bill depth.
+
+The tidy() function is one of the functions offered by the [broom package](https://broom.tidymodels.org), which provide information about a model as a tibble. This means we can do all the operations covered above on our model output.
+
+
+You can also plot this model using geom_smooth(method = lm) from the [ggplot package](https://ggplot2.tidyverse.org), I won't get into the specifics here as ggplot2 merits a whole session to itself.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(data = penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(size = 2) +
+  geom_smooth(method = lm, se = FALSE, colour = "red")
+  
+```
+
+As we can see, there appears to be a slightly negative relationship between bill length and bill depth.
+
+However simple approaches like this can be very misleading, look what happens when we instead fit a linear model for each species separately:
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(data = penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species,
+                 shape = species),
+             size = 2)  +
+  geom_smooth(aes(colour = species), method = lm, se = FALSE) +
+  geom_smooth(method = lm, se = FALSE, color = 'red') +
+  scale_color_manual(values = c("darkorange","darkorchid","cyan4"))
+```
+
+## Logistic regression:
+
+You can fit a logistic regression model in R using the[ glm() function](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/glm). It has a very similar syntax to lm():
+
+glm(formula = dependent_variable ~ independent_variable_1 + independent_variable_2 ... + independent_variable_n, data = name_of_the_data, family = "binomial").
+
+For example, we could use body mass as a independent variable for predicting sex:
+
+```{r}
+peng_dummies <- penguins %>% dummy_cols("sex",remove_first_dummy = TRUE)
+  
+logistic_model <- glm(formula = sex_male ~ body_mass_g, data = peng_dummies, family = "binomial")
+
+tidy(logistic_model)
+```
+
+## Regression assumptions:
+
+You can get a selection of diagnostic plots for your regression models by passing the models as an argument to the [plot() function](https://www.rdocumentation.org/packages/graphics/versions/3.6.2/topics/plot):
+
+```{r}
+plot(linear_model)
+```
+
+In a later session, we will learn how to customize the appearance of these plots in ggplot.
+
+# Extra resources:
+
+Hadley Wickham and Garrett Grolemund's great free book R for Data Science is widely considered the best introductory text on the tidyverse approach to R: [https://r4ds.had.co.nz](https://r4ds.had.co.nz)
+
+Once a week, members of the R community takes a collective look at an open-access data-set in an event called [Tidy Tuesday](https://thomasmock.netlify.app/post/tidytuesday-a-weekly-social-data-project-in-r/).
+
+Julia Silge's [blog](https://juliasilge.com) and [screencasts](https://www.youtube.com/c/JuliaSilge/videos).
+
+[Science as Amateur Software Development](https://youtu.be/zwRdO9_GGhY), a recent talk by Richard McElreath on the importance of programming practice for science. 
+
+[Good enough practices in scientific computing](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005510), a paper which outlines "a set of good computing practices that every researcher can adopt, regardless of their current level of computational skill".
+
+[Coding club](https://ourcodingclub.github.io), an online coding club based at the University of Edinburgh, but open to all.
+
+# Credits:
+
+Artwork by @allison_horst

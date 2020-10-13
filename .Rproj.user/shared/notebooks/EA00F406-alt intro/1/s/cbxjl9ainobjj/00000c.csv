@@ -1,0 +1,5 @@
+"0","peng_dummies <- penguins %>% dummy_cols(""sex"",remove_first_dummy = TRUE)"
+"0","  "
+"0","logistic_model <- glm(formula = sex_male ~ body_mass_g, data = peng_dummies, family = ""binomial"")"
+"0",""
+"0","tidy(logistic_model)"
